@@ -12,10 +12,11 @@ import java.net.*;
 public class Client implements ActionListener {
 
     JTextField text;
-    static JFrame f = new JFrame();
     static JPanel a1;
     static Box vertical = Box.createVerticalBox();
+    static JFrame f = new JFrame();
     static DataOutputStream dout;
+    static JScrollPane scrollPane;
 
     Client() {
         f.setLayout(null);
@@ -42,7 +43,7 @@ public class Client implements ActionListener {
         //Back close here
 
         //Insert profile image
-        ImageIcon i4 = new ImageIcon(ClassLoader.getSystemResource("icons/pic2.png"));
+        ImageIcon i4 = new ImageIcon(ClassLoader.getSystemResource("icons/Person2.jpg"));
         Image i5 = i4.getImage().getScaledInstance(50, 50, Image.SCALE_DEFAULT);
         ImageIcon i6 = new ImageIcon(i5);
         JLabel profile = new JLabel(i6);
@@ -78,7 +79,7 @@ public class Client implements ActionListener {
         //more close here
 
         //Insert profile name
-        JLabel name = new JLabel("Abir");
+        JLabel name = new JLabel("Suman Roy");
         name.setBounds(110, 15, 100, 18);
         name.setForeground(Color.white);
         name.setFont(new Font("sans-serif", Font.BOLD, 24));
@@ -94,8 +95,11 @@ public class Client implements ActionListener {
         //online close here
 
         a1 = new JPanel();
-        a1.setBounds(5, 75, 440, 570);
-        f.add(a1);
+        a1.setLayout(new BoxLayout(a1, BoxLayout.Y_AXIS));
+        scrollPane = new JScrollPane(a1);
+        scrollPane.setBounds(5, 75, 440, 570);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        f.add(scrollPane);
 
         //Insert Textbox
         text = new JTextField();
@@ -126,20 +130,20 @@ public class Client implements ActionListener {
         try {
             String out = text.getText();
             JPanel p2 = formatLabel(out);
-            a1.setLayout(new BorderLayout());
+            //p2.add(output);
+            // a1.setLayout(new BorderLayout());
             JPanel right = new JPanel(new BorderLayout());
             right.add(p2, BorderLayout.LINE_END);
             vertical.add(right);
             vertical.add(Box.createVerticalStrut(15));
-            a1.add(vertical, BorderLayout.PAGE_START);
-
+            // a1.add(vertical, BorderLayout.PAGE_START);
+            a1.add(vertical);
             dout.writeUTF(out);
-
             text.setText("");
-
             f.repaint();
             f.invalidate();
             f.validate();
+            scrollToBottom();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -148,9 +152,9 @@ public class Client implements ActionListener {
     public static JPanel formatLabel(String out) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        JLabel output = new JLabel(out);
+        JLabel output = new JLabel("<html><p style='width: 150px;'>" + out + "</p></html>");
         output.setFont(new Font("Tahoma", Font.PLAIN, 20));
-        output.setBackground(new Color(30, 201, 192));
+        output.setBackground(new Color(217, 253, 211));
         output.setOpaque(true);
         output.setBorder(new EmptyBorder(15, 15, 15, 50));
         panel.add(output);
@@ -159,30 +163,45 @@ public class Client implements ActionListener {
         JLabel time = new JLabel();
         time.setText(sd.format(cal.getTime()));
         panel.add(time);
-
         return panel;
+    }
+
+
+    public static void scrollToBottom() {
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+            verticalBar.setValue(verticalBar.getMaximum());
+        });
     }
 
     public static void main(String[] args) {
         new Client();
+        Socket s = null;
         try {
-            Socket s = new Socket("127.0.0.1", 6001);
+            s = new Socket("127.0.0.1", 1001);
             DataInputStream din = new DataInputStream(s.getInputStream());
             dout = new DataOutputStream(s.getOutputStream());
-            while (true) {
+            while(true) {
                 a1.setLayout(new BorderLayout());
                 String msg = din.readUTF();
                 JPanel panel = formatLabel(msg);
                 JPanel left = new JPanel(new BorderLayout());
                 left.add(panel, BorderLayout.LINE_START);
                 vertical.add(left);
-
                 vertical.add(Box.createVerticalStrut(15));
                 a1.add(vertical, BorderLayout.PAGE_START);
                 f.validate();
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (s != null) {
+                    s.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
